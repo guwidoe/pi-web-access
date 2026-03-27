@@ -579,8 +579,8 @@ export default function (pi: ExtensionAPI) {
 		for (const { provider, id } of candidates) {
 			const model = getModel(provider, id);
 			if (!model) continue;
-			const apiKey = await ctx.modelRegistry.getApiKey(model);
-			if (apiKey) return { model, apiKey };
+			const auth = await ctx.modelRegistry.getApiKeyAndHeaders(model);
+			if (auth.ok && auth.apiKey) return { model, apiKey: auth.apiKey };
 		}
 		throw new Error(`No model available: ${candidates.map(c => `${c.provider}/${c.id}`).join(", ")}`);
 	}
@@ -663,7 +663,7 @@ export default function (pi: ExtensionAPI) {
 		};
 
 		try {
-			const availableModels = await summaryContext.modelRegistry.getAvailable();
+			const availableModels = summaryContext.modelRegistry.getAvailable();
 			for (const model of availableModels) {
 				const value = `${model.provider}/${model.id}`;
 				availableValues.add(value);

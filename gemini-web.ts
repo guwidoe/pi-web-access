@@ -1,6 +1,6 @@
 import { existsSync, readFileSync } from "node:fs";
 import { homedir } from "node:os";
-import { join } from "node:path";
+import { join, basename } from "node:path";
 import { type CookieMap, getGoogleCookies } from "./chrome-cookies.js";
 
 const GEMINI_APP_URL = "https://gemini.google.com/app";
@@ -315,9 +315,6 @@ async function uploadFile(
 	cookieHeader: string,
 	signal: AbortSignal,
 ): Promise<{ id: string; name: string }> {
-	const { readFileSync } = await import("node:fs");
-	const { basename } = await import("node:path");
-
 	const data = readFileSync(filePath);
 	const fileName = basename(filePath);
 	const boundary = "----FormBoundary" + Math.random().toString(36).slice(2);

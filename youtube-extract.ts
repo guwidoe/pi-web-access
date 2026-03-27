@@ -1,3 +1,4 @@
+import { execFileSync } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
@@ -143,7 +144,6 @@ function mapYtDlpError(err: unknown): string {
 
 export async function getYouTubeStreamInfo(videoId: string): Promise<StreamResult> {
 	try {
-		const { execFileSync } = await import("node:child_process");
 		const output = execFileSync("yt-dlp", [
 			"--print", "duration",
 			"-g", `https://www.youtube.com/watch?v=${videoId}`,
@@ -162,7 +162,6 @@ export async function getYouTubeStreamInfo(videoId: string): Promise<StreamResul
 
 async function extractFrameFromStream(streamUrl: string, seconds: number): Promise<FrameResult> {
 	try {
-		const { execFileSync } = await import("node:child_process");
 		const buffer = execFileSync("ffmpeg", [
 			"-ss", String(seconds), "-i", streamUrl,
 			"-frames:v", "1", "-f", "image2pipe", "-vcodec", "mjpeg", "pipe:1",

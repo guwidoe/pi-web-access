@@ -193,18 +193,18 @@ async function resolveSummaryModel(
 		if (!selectedModel) {
 			throw new Error(`Summary model not found: ${normalizedOverride}`);
 		}
-		const selectedApiKey = await ctx.modelRegistry.getApiKey(selectedModel);
-		if (!selectedApiKey) {
+		const selectedAuth = await ctx.modelRegistry.getApiKeyAndHeaders(selectedModel);
+		if (!selectedAuth.ok || !selectedAuth.apiKey) {
 			throw new Error(`No API key available for summary model ${normalizedOverride}`);
 		}
-		return { model: selectedModel, apiKey: selectedApiKey };
+		return { model: selectedModel, apiKey: selectedAuth.apiKey };
 	}
 
 	for (const { provider, id } of PREFERRED_SUMMARY_MODELS) {
 		const model = getModel(provider, id);
 		if (!model) continue;
-		const apiKey = await ctx.modelRegistry.getApiKey(model);
-		if (apiKey) return { model, apiKey };
+		const auth = await ctx.modelRegistry.getApiKeyAndHeaders(model);
+		if (auth.ok && auth.apiKey) return { model, apiKey: auth.apiKey };
 	}
 
 	throw new Error(`No API key available for summary models: ${PREFERRED_SUMMARY_MODELS.map(c => `${c.provider}/${c.id}`).join(", ")}`);

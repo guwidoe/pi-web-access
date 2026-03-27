@@ -4,6 +4,8 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.10.4] - 2026-03-27
+
 ### Added
 - **Workflow-based curator hard cutover (`workflow`).** Replaced `curate` with `workflow: "none" | "summary-review"`, added summary-review approval flow with `POST /summarize`, made summary text the primary returned output while retaining raw curated evidence in `details`, and switched timeout handling to submit-first with deterministic summary fallback when no approved draft exists.
 - **Auto-open curator for all `web_search` runs (single + multi query).** Searches now open the curator window immediately and stream results live for review workflows; the old countdown/auto-condense fallback path was removed.
@@ -30,6 +32,11 @@ All notable changes to this project will be documented in this file.
 - **Inline annotation feedback in preview modal.** Select any text in the rendered summary preview to get a popover with a quoted excerpt and a feedback textarea. Regenerate from the popover to send targeted feedback like `Regarding: "<selected text>" — <your note>`. Supports Cmd/Ctrl+Enter to submit and Escape to dismiss.
 - **Concurrent add-search and alt-chip searches.** The "Add a search" input and "Also try" provider chips are no longer locked while other searches are in-flight. Multiple searches can run in parallel.
 - **Batch provider search shows searching cards immediately.** Clicking a provider button now creates placeholder cards with loading animations upfront instead of waiting for results to arrive.
+
+### Changed
+- Exa search now always requests text content from both direct API and MCP paths (3000 chars default, 50000 with `includeContent`) instead of requesting highlights only. Ensures consistent answer quality regardless of whether Exa returns highlight snippets.
+- Adapted model registry calls to pi SDK changes: `getApiKey()` → `getApiKeyAndHeaders()` in `index.ts` and `summary-review.ts`, and `getAvailable()` from async to sync.
+- Hoisted dynamic `await import()` calls to static top-level imports in `gemini-web.ts`, `video-extract.ts`, and `youtube-extract.ts`.
 
 ### Removed
 - **`result-review` workflow.** Hard cutover — only `"none"` and `"summary-review"` remain. Removed from `WebSearchWorkflow` type, `resolveWorkflow()`, tool schema, `/websearch` command, and `/curator` command.
@@ -81,6 +88,8 @@ All notable changes to this project will be documented in this file.
 - Simplified curator bootstrap wiring in `index.ts` by extracting shared provider/timeout setup (`ProviderAvailability`, `CuratorBootstrap`, `getProviderAvailability`, `loadCuratorBootstrap`) and removing duplicated availability assembly across `web_search` and `/websearch` flows.
 - Hardened SSE event parsing in curator client (`curator-page.ts`): malformed JSON payloads from SSE `data:` lines now surface as user-visible errors instead of crashing the page via uncaught `JSON.parse` exceptions.
 - Fixed "Send results" producing a deterministic summary instead of raw curated results. The submit payload now uses a `rawResults` flag to distinguish explicit "Send results" clicks from timeout-via-submit, which correctly falls back to a deterministic summary.
+- Exa search results with no highlight snippets now fall back to `item.text` (truncated to 1000 chars) instead of producing empty answers. Empty snippets are also skipped during MCP answer assembly.
+- Exa MCP result parsing now handles `Highlights:` response blocks in addition to `Text:` blocks, and strips trailing `---` separators from parsed content.
 - Fixed stale heading count after a user-added search fails and its card is removed. `updateSummaryText()` is now called in all card-removal error paths.
 - Fixed heading not reflecting new in-progress searches immediately. Adding a search via "Also try" or "Add a search" now updates the heading to show the new total (e.g., "4 of 5 Searches Complete") right away instead of waiting for completion.
 

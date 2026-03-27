@@ -174,17 +174,19 @@ function normalizeHighlights(value: unknown): string[] {
 	return value.filter((item): item is string => typeof item === "string" && item.trim().length > 0);
 }
 
-function buildAnswerFromHighlights(results: ExaSearchResponse["results"]): string {
+function buildAnswerFromSearchResults(results: ExaSearchResponse["results"]): string {
 	if (!results?.length) return "";
 	const parts: string[] = [];
 	for (let i = 0; i < results.length; i++) {
 		const item = results[i];
 		if (!item?.url) continue;
 		const highlights = normalizeHighlights(item.highlights);
-		if (highlights.length === 0) continue;
-		const joined = highlights.join(" ");
+		const content = highlights.length > 0
+			? highlights.join(" ")
+			: typeof item.text === "string" ? item.text.trim().slice(0, 1000) : "";
+		if (!content) continue;
 		const sourceTitle = item.title || `Source ${i + 1}`;
-		parts.push(`${joined}\nSource: ${sourceTitle} (${item.url})`);
+		parts.push(`${content}\nSource: ${sourceTitle} (${item.url})`);
 	}
 	return parts.join("\n\n");
 }
@@ -305,8 +307,17 @@ function parseMcpResults(text: string): McpParsedResult[] | null {
 	const parsed = blocks.map(block => {
 		const title = block.match(/^Title: (.+)/m)?.[1]?.trim() ?? "";
 		const url = block.match(/^URL: (.+)/m)?.[1]?.trim() ?? "";
+		let content = "";
 		const textStart = block.indexOf("\nText: ");
-		const content = textStart >= 0 ? block.slice(textStart + 7).trim() : "";
+		if (textStart >= 0) {
+			content = block.slice(textStart + 7).trim();
+		} else {
+			const hlMatch = block.match(/\nHighlights:\s*\n/);
+			if (hlMatch?.index != null) {
+				content = block.slice(hlMatch.index + hlMatch[0].length).trim();
+			}
+		}
+		content = content.replace(/\n---\s*$/, "").trim();
 		return { title, url, content };
 	}).filter(result => result.url.length > 0);
 	return parsed.length > 0 ? parsed : null;
@@ -318,6 +329,7 @@ function buildAnswerFromMcpResults(results: McpParsedResult[]): string {
 	for (let i = 0; i < results.length; i++) {
 		const result = results[i];
 		const snippet = result.content.replace(/\s+/g, " ").trim().slice(0, 500);
+		if (!snippet) continue;
 		const sourceTitle = result.title || `Source ${i + 1}`;
 		parts.push(`${snippet}\nSource: ${sourceTitle} (${result.url})`);
 	}
@@ -366,7 +378,7 @@ async function searchWithExaMcp(query: string, options: ExaSearchOptions = {}): 
 				numResults: options.numResults ?? 5,
 				livecrawl: "fallback",
 				type: "auto",
-				...(options.includeContent ? { contextMaxCharacters: 50000 } : {}),
+				contextMaxCharacters: options.includeContent ? 50000 : 3000,
 			},
 			options.signal,
 		);
@@ -471,9 +483,10 @@ export async function searchWithExa(query: string, options: ExaSearchOptions = {
 				numResults: options.numResults ?? 5,
 				...domainFilters,
 				...(startDate ? { startPublishedDate: startDate } : {}),
-				contents: options.includeContent
-					? { text: true, highlights: true }
-					: { highlights: true },
+				contents: {
+					text: options.includeContent ? true : { maxCharacters: 3000 },
+					highlights: true,
+				},
 			}),
 			signal: requestSignal(options.signal),
 		});
@@ -487,7 +500,7 @@ export async function searchWithExa(query: string, options: ExaSearchOptions = {
 		activityMonitor.logComplete(activityId, response.status);
 
 		const mapped: SearchResponse = {
-			answer: buildAnswerFromHighlights(data.results),
+			answer: buildAnswerFromSearchResults(data.results),
 			results: mapResults(data.results),
 		};
 		if (options.includeContent) {

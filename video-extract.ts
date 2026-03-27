@@ -1,3 +1,4 @@
+import { execFileSync } from "node:child_process";
 import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
 import { readFile } from "node:fs/promises";
 import { resolve, extname, basename, join, dirname } from "node:path";
@@ -196,7 +197,6 @@ function mapFfprobeError(err: unknown): string {
 
 export async function extractVideoFrame(filePath: string, seconds: number = 1): Promise<FrameResult> {
 	try {
-		const { execFileSync } = await import("node:child_process");
 		const buffer = execFileSync("ffmpeg", [
 			"-ss", String(seconds), "-i", filePath,
 			"-frames:v", "1", "-f", "image2pipe", "-vcodec", "mjpeg", "pipe:1",
@@ -210,7 +210,6 @@ export async function extractVideoFrame(filePath: string, seconds: number = 1): 
 
 export async function getLocalVideoDuration(filePath: string): Promise<number | { error: string }> {
 	try {
-		const { execFileSync } = await import("node:child_process");
 		const output = execFileSync("ffprobe", [
 			"-v", "quiet",
 			"-show_entries", "format=duration",

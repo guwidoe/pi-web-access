@@ -919,10 +919,6 @@ main {
   color: var(--fg-dim);
   font-weight: 400;
 }
-.add-search.loading {
-  opacity: 0.5;
-  pointer-events: none;
-}
 .add-search-wand {
   flex-shrink: 0;
   width: 26px;
