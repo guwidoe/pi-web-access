@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.10.6] - 2026-04-04
+
+### Changed
+- Added `promptSnippet` metadata for `web_search`, `code_search`, `fetch_content`, and `get_search_content` so Pi 0.59+ includes these tools in the default prompt tool section and improves discoverability of research/fetch flows.
+
 ## [0.10.5] - 2026-04-03
 
 ### Fixed
