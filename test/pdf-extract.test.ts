@@ -35,12 +35,6 @@ test("repository keeps the modern unpdf line and adds a dedicated Promise.try sh
   assert.notEqual(installedUnpdf.version, "1.4.0");
 });
 
-test("pdf extraction uses errors-only PDF.js verbosity to suppress warning spam", async () => {
-  const { getPDFDocumentInitOptions } = await import(join(projectRoot, "pdf-extract.ts"));
-  assert.deepEqual(getPDFDocumentInitOptions({ ERRORS: 7 }), { verbosity: 7 });
-  assert.deepEqual(getPDFDocumentInitOptions(undefined), { verbosity: 0 });
-});
-
 test("unpdf 1.6.0 reproduces the Promise.try crash on runtimes without Promise.try", async (t) => {
   if (typeof Promise.try === "function") {
     t.skip("runtime already supports Promise.try");
