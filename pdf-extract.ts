@@ -22,6 +22,10 @@ export interface PDFExtractOptions {
   filename?: string;
 }
 
+type PDFVerbosityLevel = {
+  ERRORS?: number;
+};
+
 const DEFAULT_MAX_PAGES = 100;
 const DEFAULT_OUTPUT_DIR = join(homedir(), "Downloads");
 
@@ -59,6 +63,12 @@ async function getUnpdf() {
   return unpdfModulePromise;
 }
 
+export function getPDFDocumentInitOptions(verbosityLevel?: PDFVerbosityLevel) {
+  return {
+    verbosity: verbosityLevel?.ERRORS ?? 0,
+  };
+}
+
 /**
  * Extract text from a PDF buffer and save to markdown file
  */
@@ -77,8 +87,8 @@ export async function extractPDFToMarkdown(
     ? Math.max(1, Math.floor(maxPages))
     : DEFAULT_MAX_PAGES;
 
-  const { getDocumentProxy } = await getUnpdf();
-  const pdf = await getDocumentProxy(new Uint8Array(buffer));
+  const { getDocumentProxy, VerbosityLevel } = await getUnpdf();
+  const pdf = await getDocumentProxy(new Uint8Array(buffer), getPDFDocumentInitOptions(VerbosityLevel));
   const metadata = await pdf.getMetadata();
   const metadataInfo = metadata.info && typeof metadata.info === "object"
     ? metadata.info as Record<string, unknown>
